@@ -1,10 +1,23 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ImageBackground } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ImageBackground, Alert } from 'react-native';
+import { getAuth, signInAnonymously } from "firebase/auth";
 
 const Start = ({ navigation }) => {
     const [name, setName] = useState('');
     const image = require('../assets/Background Image.png'); //background image source
     const [selectedColor, setSelectedColor] = useState('#8A95A5');
+
+    const auth = getAuth();
+
+    const signInUser = () => {
+        signInAnonymously(auth)
+            .then(result => {
+                navigation.navigate('Chat', { name: name, backgroundColor: selectedColor, id: result.user.uid });
+                Alert.alert('Signed in succeccfully');
+            }).catch((error) => {
+                Alert.alert('Unable to signin, try later');
+            })
+    };
 
     const handleEnterChatRoom = () => {
         // Navigate to the chat screen with the entered name and selected color
@@ -13,6 +26,11 @@ const Start = ({ navigation }) => {
 
     const handleColorSelection = (color) => {
         setSelectedColor(color);
+    };
+
+    const handleButtonPress = () => {
+        handleEnterChatRoom();
+        signInUser();
     };
 
     return (
@@ -58,7 +76,7 @@ const Start = ({ navigation }) => {
                             onPress={() => handleColorSelection('#B9C6AE')}
                         />
                     </View>
-                    <TouchableOpacity style={styles.button} onPress={handleEnterChatRoom}>
+                    <TouchableOpacity style={styles.button} onPress={handleButtonPress}>
                         <Text style={styles.buttonText}>Enter Chat Room</Text>
                     </TouchableOpacity>
                 </View>
@@ -103,7 +121,7 @@ const styles = StyleSheet.create({
         borderRadius: 20,
     },
     input: {
-        width: '700',
+        width: 300,
         height: 40,
         borderWidth: 1,
         borderColor: '#ccc',
@@ -131,7 +149,7 @@ const styles = StyleSheet.create({
         borderRadius: 25,
     },
     button: {
-        width: '700',
+        width: 300,
         height: 40,
         justifyContent: 'center',
         alignItems: 'center',

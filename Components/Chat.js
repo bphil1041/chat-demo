@@ -1,87 +1,87 @@
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
-import { useState, useEffect } from "react";
 import { GiftedChat, Bubble } from "react-native-gifted-chat";
+import { onSnapshot, addDoc, collection, query, orderBy } from 'firebase/firestore';
 
-// Chat component receives the 'route' prop from navigation
-const Chat = ({ route }) => {
-    // State for storing chat messages
+const Chat = ({ route, db }) => {
+
+    const { userID, name } = route.params;
     const [messages, setMessages] = useState([]);
+    console.log('userID:', userID);
 
-    // Extracting the user's name and selected background color from the navigation route params
-    const { name, backgroundColor } = route.params;
 
-    // Function to handle sending new messages
-    const onSend = (newMessages) => {
-        setMessages(previousMessages => GiftedChat.append(previousMessages, newMessages))
-    }
+    const onSend = (newMessages = []) => {
+        const formattedMessages = newMessages.map(message => ({
+            ...message,
+            user: {
+                _id: userID,
+                name: name,
+            },
+        }));
+        addDoc(collection(db, 'messages'), formattedMessages[0]);
+    };
 
-    // Custom rendering for chat bubbles
+
+
+
     const renderBubble = (props) => {
         return (
             <Bubble
                 {...props}
                 wrapperStyle={{
                     right: {
-                        backgroundColor: "turquoise",
+                        backgroundColor: 'turquoise',
                     },
                     left: {
-                        backgroundColor: "navajowhite",
+                        backgroundColor: 'navajowhite',
                     },
                 }}
                 textStyle={{
                     right: {
-                        color: "black",
+                        color: 'black',
                     },
                     left: {
-                        color: "black",
+                        color: 'black',
                     },
                 }}
             />
         );
     };
 
-    // Setting initial chat messages on component mount
     useEffect(() => {
-        setMessages([
-            {
-                _id: 1,
-                text: 'Hello developer',
-                createdAt: new Date(),
-                user: {
-                    _id: 2,
-                    name: 'React Native',
-                    avatar: 'https://placeimg.com/140/140/any',
-                },
-            },
-            {
-                _id: 2,
-                text: 'This is a system message',
-                createdAt: new Date(),
-                system: true,
-            },
-        ]);
+        const q = query(collection(db, 'messages'), orderBy('createdAt', 'desc'));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            let newMessages = [];
+            snapshot.forEach((doc) => {
+                newMessages.push({ _id: doc.id, ...doc.data() });
+            });
+            setMessages(newMessages);
+        });
+
+        return () => {
+            if (unsubscribe) unsubscribe();
+        };
     }, []);
 
     return (
-        <View style={[styles.container, { backgroundColor }]}>
-            {/* Header section displaying the user's name */}
+        <View style={styles.container}>
             <View style={styles.header}>
                 <Text style={styles.headerText}>{name}</Text>
             </View>
-            {/* GiftedChat component for rendering the chat interface */}
             <GiftedChat
                 messages={messages}
-                renderBubble={renderBubble}
-                onSend={messages => onSend(messages)}
+                onSend={(messages) => onSend(messages)}
                 user={{
-                    _id: 1
+                    _id: userID,
+                    name: name,
                 }}
+                renderBubble={renderBubble}
+
             />
-            {/* KeyboardAvoidingView to handle keyboard behavior on different platforms */}
-            {Platform.OS === "android" ? (
+            {Platform.OS === 'android' ? (
                 <KeyboardAvoidingView behavior="height" />
             ) : null}
-            {Platform.OS === "ios" ? (
+            {Platform.OS === 'ios' ? (
                 <KeyboardAvoidingView behavior="padding" />
             ) : null}
         </View>
@@ -106,3 +106,4 @@ const styles = StyleSheet.create({
 });
 
 export default Chat;
+
