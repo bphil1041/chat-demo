@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ImageBackground, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ImageBackground, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { getAuth, signInAnonymously } from "firebase/auth";
 
 const Start = ({ navigation }) => {
@@ -12,16 +12,19 @@ const Start = ({ navigation }) => {
     const signInUser = () => {
         signInAnonymously(auth)
             .then(result => {
-                navigation.navigate('Chat', { name: name, backgroundColor: selectedColor, id: result.user.uid });
-                Alert.alert('Signed in succeccfully');
+                navigation.navigate('Chat', { name: name, backgroundColor: selectedColor, userID: result.user.uid });
+                Alert.alert('Signed in successfully');
             }).catch((error) => {
                 Alert.alert('Unable to signin, try later');
-            })
+            });
     };
 
     const handleEnterChatRoom = () => {
-        // Navigate to the chat screen with the entered name and selected color
-        navigation.navigate('Chat', { name, backgroundColor: selectedColor });
+        if (auth.currentUser) {
+            navigation.navigate('Chat', { name, backgroundColor: selectedColor, userID: auth.currentUser.uid });
+        } else {
+            Alert.alert('User not signed in');
+        }
     };
 
     const handleColorSelection = (color) => {
@@ -34,11 +37,13 @@ const Start = ({ navigation }) => {
     };
 
     return (
-        <View style={styles.container}>
+        <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.container}
+        >
             <ImageBackground source={image} resizeMode="cover" style={styles.image}>
                 <Text style={styles.text}>Chat App</Text>
                 <View style={styles.formContainer}>
-                    {/*<Text style={styles.title}>Enter Your Name</Text>*/}
                     <TextInput
                         style={styles.input}
                         placeholder="Your Name"
@@ -81,7 +86,7 @@ const Start = ({ navigation }) => {
                     </TouchableOpacity>
                 </View>
             </ImageBackground>
-        </View>
+        </KeyboardAvoidingView>
     );
 };
 
@@ -112,13 +117,6 @@ const styles = StyleSheet.create({
         fontSize: 45,
         fontWeight: '600',
         color: 'white',
-    },
-    title: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#757083',
-        marginBottom: 20,
-        borderRadius: 20,
     },
     input: {
         width: 300,
