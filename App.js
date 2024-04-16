@@ -8,11 +8,14 @@ import { getFirestore } from "firebase/firestore";
 
 const Stack = createNativeStackNavigator();
 
+import { LogBox } from 'react-native';
+LogBox.ignoreLogs(["AsyncStorage has been extracted from"]);
+
 
 const App = () => {
 
 
-  // Your web app's Firebase configuration
+  // Firebase configuration
   const firebaseConfig = {
     apiKey: "AIzaSyBl33IU1V73I5WsZoIUKpUv_nOXXTFHi2Q",
     authDomain: "chat-app-14464.firebaseapp.com",
