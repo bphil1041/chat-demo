@@ -3,13 +3,13 @@ import { View, Text, StyleSheet, KeyboardAvoidingView, Platform } from 'react-na
 import { GiftedChat, Bubble, InputToolbar } from "react-native-gifted-chat";
 import { onSnapshot, addDoc, collection, query, orderBy } from 'firebase/firestore';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import CustomActions from './CustomActions';
+import MapView from 'react-native-maps';
 
-
-const Chat = ({ route, db, isConnected }) => {
-    const { userID, name } = route.params;
+const Chat = ({ route, db, isConnected, storage }) => {
+    const { userID, name, backgroundColor } = route.params;
     const [messages, setMessages] = useState([]);
     let soundObject = null;
-
 
     const onSend = (newMessages) => {
         const formattedMessages = newMessages.map(message => ({
@@ -21,7 +21,6 @@ const Chat = ({ route, db, isConnected }) => {
         }));
         addDoc(collection(db, 'messages'), formattedMessages[0]);
     };
-
 
     const renderBubble = (props) => {
         return (
@@ -51,6 +50,33 @@ const Chat = ({ route, db, isConnected }) => {
     const renderInputToolbar = (props) => {
         if (isConnected) return <InputToolbar {...props} />;
         else return null;
+    }
+
+    const renderCustomActions = (props) => {
+        return <CustomActions storage={storage} {...props} />;
+    };
+
+    const renderCustomView = (props) => {
+        const { currentMessage } = props;
+        if (currentMessage.location) {
+            return (
+                <MapView
+                    style={{
+                        width: 150,
+                        height: 100,
+                        borderRadius: 13,
+                        margin: 3
+                    }}
+                    region={{
+                        latitude: currentMessage.location.latitude,
+                        longitude: currentMessage.location.longitude,
+                        latitudeDelta: 0.0922,
+                        longitudeDelta: 0.0421,
+                    }}
+                />
+            );
+        }
+        return null;
     }
 
     // Messages database
@@ -96,22 +122,22 @@ const Chat = ({ route, db, isConnected }) => {
         }
     }
 
-
-
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor }]}>
             <View style={styles.header}>
                 <Text style={styles.headerText}>{name}</Text>
             </View>
             <GiftedChat
                 messages={messages}
+                renderBubble={renderBubble}
                 renderInputToolbar={renderInputToolbar}
-                onSend={(messages) => onSend(messages)}
+                onSend={messages => onSend(messages)}
+                renderActions={renderCustomActions}
+                renderCustomView={renderCustomView}
                 user={{
                     _id: userID,
-                    name: name,
+                    name
                 }}
-                renderBubble={renderBubble}
             />
             {Platform.OS === 'android' ? (
                 <KeyboardAvoidingView behavior="height" />
